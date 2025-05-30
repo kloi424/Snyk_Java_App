@@ -1,64 +1,28 @@
-package com.appsecco.dvja.controllers;
-
-import org.apache.commons.lang.StringUtils;
+package com.example;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Scanner;
 
-public class PingAction extends BaseController {
+public class CommandInjectionApp {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter filename to list: ");
+        String filename = scanner.nextLine();
 
-    private String address;
-    private String commandOutput;
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getCommandOutput() {
-        return commandOutput;
-    }
-
-    public void setCommandOutput(String commandOutput) {
-        this.commandOutput = commandOutput;
-    }
-
-    public String execute() {
-        if(StringUtils.isEmpty(getAddress()))
-            return INPUT;
+        // ❌ Command Injection Vulnerability
+        String command = "ls " + filename;
 
         try {
-            doExecCommand();
+            Process process = Runtime.getRuntime().exec(command);
+            BufferedReader reader =
+                new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
         } catch (Exception e) {
-            addActionMessage("Error running command: " + e.getMessage());
+            System.out.println("Error executing command: " + e.getMessage());
         }
-
-        return SUCCESS;
-    }
-
-    private void doExecCommand() throws IOException {
-        Runtime runtime = Runtime.getRuntime();
-        String[] command = { "/bin/bash", "-c", "ping -t 5 -c 5 " + getAddress() };
-        Process process = runtime.exec(command);
-
-        BufferedReader  stdinputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line = null;
-        String output = "Output:\n\n";
-
-        while((line = stdinputReader.readLine()) != null)
-            output += line + "\n";
-
-        output += "\n";
-        output += "Error:\n\n";
-
-        stdinputReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        while((line = stdinputReader.readLine()) != null)
-            output += line + "\n";
-
-        setCommandOutput(output);
     }
 }
